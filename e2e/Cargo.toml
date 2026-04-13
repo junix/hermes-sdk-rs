@@ -1,0 +1,10 @@
+[package]
+name = "hermes-sdk-e2e"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+hermes-sdk = { path = ".." }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
