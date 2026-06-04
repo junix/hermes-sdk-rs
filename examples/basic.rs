@@ -19,24 +19,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resp = client.create_response(&req).await?;
     println!("Response ID: {}", resp.id);
     println!("Status: {}", resp.status);
-    println!("Usage: {} in / {} out / {} total tokens", resp.usage.input_tokens, resp.usage.output_tokens, resp.usage.total_tokens);
+    println!(
+        "Usage: {} in / {} out / {} total tokens",
+        resp.usage.input_tokens, resp.usage.output_tokens, resp.usage.total_tokens
+    );
 
     println!("\n--- Output items ---");
     for item in &resp.output {
         match item {
-            OutputItem::FunctionCall { name, arguments, call_id } => {
+            OutputItem::FunctionCall {
+                name,
+                arguments,
+                call_id,
+            } => {
                 println!("[tool call] {name}({arguments}) [{call_id}]");
             }
             OutputItem::FunctionCallOutput { call_id, output } => {
-                let preview = if output.len() > 200 { &output[..200] } else { output };
+                let preview = if output.len() > 200 {
+                    &output[..200]
+                } else {
+                    output
+                };
                 println!("[tool result] [{call_id}] {preview}");
             }
             OutputItem::Message { role, content } => {
                 for part in content {
                     let text = match part {
-                                ContentPart::OutputText { text } => text.as_str(),
-                            };
-                        println!("[{role}] {text}");
+                        ContentPart::OutputText { text } => text.as_str(),
+                    };
+                    println!("[{role}] {text}");
                 }
             }
         }
