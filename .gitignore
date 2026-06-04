@@ -1,2 +1,7 @@
 /target
 **/target/
+target/
+.claude/
+.live-cc/
+.jcode/
+.DS_Store
