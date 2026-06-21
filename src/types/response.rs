@@ -105,3 +105,7 @@ impl Response {
         self.output.iter().find_map(|item| item.as_text())
     }
 }
+
+#[cfg(test)]
+#[path = "response_test.rs"]
+mod tests;

@@ -88,3 +88,7 @@ impl CreateResponseRequestBuilder {
         })
     }
 }
+
+#[cfg(test)]
+#[path = "builder_test.rs"]
+mod tests;

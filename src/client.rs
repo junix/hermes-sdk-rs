@@ -103,3 +103,7 @@ impl HermesClient {
         resp.json::<Response>().await.map_err(HermesError::from)
     }
 }
+
+#[cfg(test)]
+#[path = "client_test.rs"]
+mod tests;
