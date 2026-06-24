@@ -62,7 +62,7 @@ for `role`.
 ```
 Response {
   id          : response-ID,
-  object_type : literal "response",
+  object_type : UTF-8 string  ▷ observed "response"; not validated by the SDK
   status      : UTF-8 string,
   created_at  : UNIX timestamp (non-negative integer),
   model       : model-identifier,
@@ -70,6 +70,9 @@ Response {
   usage       : token-usage,
 }
 ```
+
+The SDK deserializes `object_type` as a free-form string and does not enforce the
+literal `"response"`. The observed gateway value is `"response"` (see E.1).
 
 Invariant: `usage.total_tokens = usage.input_tokens + usage.output_tokens`.
 
@@ -132,10 +135,13 @@ TokenUsage {
 ```
 DeleteResponse {
   id          : response-ID,
-  object_type : literal "response",
+  object_type : UTF-8 string  ▷ observed "response"; not validated by the SDK
   deleted     : boolean,
 }
 ```
+
+The observed gateway value for `object_type` is `"response"` (see E.7). The SDK
+deserializes it as a free-form string without enforcing the literal.
 
 ## API Error
 
@@ -169,3 +175,9 @@ SDKError =
 - A response contains zero or more output-items; ordering is significant
   (function calls and their outputs precede the final message).
 - A function-call-output references a function-call by `call_id`.
+
+---
+
+## Revision History
+
+- 2026-06-24 — code_stronger_than_spec: clarified that `object_type` on both Response and DeleteResponse is a free-form string the SDK deserializes without enforcing the literal; the previous "literal" wording could be read as an SDK-enforced invariant. Observed gateway value remains `"response"` (e2e).

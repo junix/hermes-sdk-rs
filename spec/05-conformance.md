@@ -105,9 +105,12 @@ usage.output_tokens`.
 
 | ID | Behavior | Observable result | Status |
 |----|----------|-------------------|--------|
-| B.1 | Builder without input fails | ConfigError returned | [T] |
-| B.2 | Builder with both conversation and previous_response_id fails | ConfigError returned | [T] |
-| B.3 | Builder with only input succeeds | Valid request returned | [T] |
+| B.1 | Builder without input fails | ConfigError returned; message contains "input is required" | [T] |
+| B.2 | Builder with both conversation and previous_response_id fails | ConfigError returned; message contains "mutually exclusive" | [T] |
+| B.3 | Builder with only input succeeds | Valid request returned; optional fields are absent | [T] |
+| B.4 | Builder with messages input plus all optional fields succeeds | Input is Messages; instructions/previous_response_id/store/model/conversation_history carried through | [T] |
+| B.5 | Builder with conversation but no previous_response_id succeeds | conversation set, previous_response_id absent | [T] |
+| B.6 | Builder setters overwrite (last value wins) | Repeated setter call for the same field keeps only the last value | [T] |
 
 ### C. Create Response
 
@@ -157,7 +160,16 @@ usage.output_tokens`.
 
 | ID | Behavior | Observable result | Status |
 |----|----------|-------------------|--------|
-| H.1 | response.text() returns assistant text | First Message output-item's text | [T] |
+| H.1 | response.text() returns first assistant text, skipping non-Message items | First Message output-item's first text content-part | [T] |
 | H.2 | as_function_call() returns name and arguments | (name, arguments) for FunctionCall variant | [T] |
-| H.3 | as_text() returns nothing for non-Message items | Returns nothing for FunctionCall / FunctionCallOutput | [U] 当前未覆盖 |
-| H.4 | as_function_call() returns nothing for non-FunctionCall items | Returns nothing for Message / FunctionCallOutput | [U] 当前未覆盖 |
+| H.3 | as_text() returns the first text of a Message item | First content-part's text when Message has content | [T] |
+| H.4 | as_text() returns nothing for non-Message items | Returns nothing for FunctionCall / FunctionCallOutput | [T] |
+| H.5 | as_text() returns nothing for a Message with empty content | Nothing returned when content list is empty | [T] |
+| H.6 | as_function_call() returns nothing for non-FunctionCall items | Returns nothing for Message / FunctionCallOutput | [T] |
+
+---
+
+## Revision History
+
+- 2026-06-24 — code_stronger_than_code: commit ecedfed added unit tests (`builder_test.rs`, `response_test.rs`, `client_test.rs`) locking previously-uncovered builder/accessor/delete behaviors; upgraded H.3/H.4 from [U] to [T], added B.4/B.5/B.6 and H.5/H.6, and clarified H.1 to reflect that `response.text()` skips non-Message items.
+- 2026-06-24 — aligned: builder validation ConfigError messages ("input is required", "mutually exclusive") confirmed by `build_fails_when_input_missing` and `build_rejects_conversation_and_previous_response_id_together`; B.1/B.2 observable-result column tightened with the substring.

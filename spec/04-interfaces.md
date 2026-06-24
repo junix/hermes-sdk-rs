@@ -107,6 +107,9 @@ builder-method = ".input("        text-value  ")"
 }
 ```
 
+The `"object"` field value `"response"` is the observed gateway value; the SDK
+deserializes it as a free-form string and does not validate the literal.
+
 ### output-item (tagged union on "type")
 
 ```json
@@ -126,6 +129,9 @@ builder-method = ".input("        text-value  ")"
 ```json
 { "id": "resp_...", "object": "response", "deleted": true }
 ```
+
+The `"object"` field value `"response"` is the observed gateway value; the SDK
+deserializes it as a free-form string and does not validate the literal.
 
 ### error response (from gateway)
 
@@ -159,3 +165,9 @@ Fields `param` and `code` are optional in the error object.
 - **Tool definitions**: not part of the SDK request -- tool availability is
   configured gateway-side; the SDK merely relays tool-call and tool-result
   output-items.
+
+---
+
+## Revision History
+
+- 2026-06-24 — code_stronger_than_spec: clarified that the `"object"` field value in both the response and delete-response wire formats is the observed gateway value, not a literal the SDK validates; the SDK deserializes it as a free-form string.
