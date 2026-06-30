@@ -130,11 +130,13 @@ async fn delete_response_maps_non_2xx_to_api_error() {
 
 #[test]
 fn new_uses_default_base_url_when_empty() {
-    // Cannot easily assert the exact default without exposing internals; instead
-    // assert that an empty base_url is accepted and the client constructs.
+    // An empty base_url must fall back to the documented default
+    // (http://127.0.0.1:8642). The field is private, so observe it through the
+    // derived Debug representation, which renders it as a quoted string.
     let client = HermesClient::new("k", "");
-    // Round-trip sanity: a client built with an explicit URL keeps it in the
-    // request target. Empty string path is exercised by the success test below
-    // indirectly via a real URL; here we just ensure construction does not panic.
-    let _ = format!("{:?}", client);
+    let debug = format!("{:?}", client);
+    assert!(
+        debug.contains("base_url: \"http://127.0.0.1:8642\""),
+        "empty base_url must default to http://127.0.0.1:8642, got: {debug}"
+    );
 }
