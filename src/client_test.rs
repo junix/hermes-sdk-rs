@@ -140,3 +140,65 @@ fn new_uses_default_base_url_when_empty() {
         "empty base_url must default to http://127.0.0.1:8642, got: {debug}"
     );
 }
+
+#[tokio::test]
+async fn ensure_success_passes_through_2xx_response() {
+    // Drive ensure_success directly: issue a raw request so we can hand the
+    // resulting Response to the helper instead of going through an endpoint.
+    let url = spawn_mock(
+        "GET /v1/responses/ok",
+        Canned {
+            status_line: "HTTP/1.1 200 OK",
+            body: r#"{"ok":true}"#.to_string(),
+        },
+    )
+    .await;
+    let resp = reqwest::Client::new()
+        .get(format!("{}/v1/responses/ok", url))
+        .header("Authorization", "Bearer secret-key")
+        .send()
+        .await
+        .expect("send");
+    let resp = client_at(&url)
+        .ensure_success(resp)
+        .await
+        .expect("2xx must pass through");
+    assert!(resp.status().is_success());
+}
+
+#[tokio::test]
+async fn ensure_success_maps_non_2xx_to_api_error() {
+    let url = spawn_mock(
+        "GET /v1/responses/bad",
+        Canned {
+            status_line: "HTTP/1.1 422 Unprocessable Entity",
+            body: r#"{"error":{"message":"nope","type":"invalid_request","code":"422"}}"#
+                .to_string(),
+        },
+    )
+    .await;
+    let resp = reqwest::Client::new()
+        .get(format!("{}/v1/responses/bad", url))
+        .header("Authorization", "Bearer secret-key")
+        .send()
+        .await
+        .expect("send");
+    let err = client_at(&url)
+        .ensure_success(resp)
+        .await
+        .expect_err("non-2xx must error");
+    match err {
+        HermesError::Api {
+            status,
+            message,
+            error_type,
+            code,
+        } => {
+            assert_eq!(status, 422);
+            assert_eq!(message, "nope");
+            assert_eq!(error_type.as_deref(), Some("invalid_request"));
+            assert_eq!(code.as_deref(), Some("422"));
+        }
+        other => panic!("expected Api error, got {other:?}"),
+    }
+}

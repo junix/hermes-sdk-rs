@@ -69,11 +69,7 @@ impl HermesClient {
             .send()
             .await?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(HermesError::from_response(status, &body));
-        }
+        let resp = self.ensure_success(resp).await?;
 
         resp.json::<DeleteResponse>()
             .await
@@ -93,13 +89,24 @@ impl HermesClient {
         Ok(resp.status().is_success())
     }
 
-    async fn handle_response(&self, resp: reqwest::Response) -> Result<Response, HermesError> {
+    /// If `resp` is 2xx, return it intact for further decoding; otherwise read
+    /// the body and map it to an `HermesError::Api` (OpenAI-compatible shape).
+    ///
+    /// Shared by every endpoint so success/error handling stays consistent.
+    async fn ensure_success(
+        &self,
+        resp: reqwest::Response,
+    ) -> Result<reqwest::Response, HermesError> {
         if !resp.status().is_success() {
             let status = resp.status().as_u16();
             let body = resp.text().await.unwrap_or_default();
             return Err(HermesError::from_response(status, &body));
         }
+        Ok(resp)
+    }
 
+    async fn handle_response(&self, resp: reqwest::Response) -> Result<Response, HermesError> {
+        let resp = self.ensure_success(resp).await?;
         resp.json::<Response>().await.map_err(HermesError::from)
     }
 }
