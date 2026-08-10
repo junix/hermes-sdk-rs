@@ -202,3 +202,146 @@ async fn ensure_success_maps_non_2xx_to_api_error() {
         other => panic!("expected Api error, got {other:?}"),
     }
 }
+
+#[tokio::test]
+async fn from_response_falls_back_to_raw_body_when_error_body_is_not_structured_json() {
+    // from_response's other branch: a body that is not `{"error":{...}}` JSON
+    // must land in the fallback arm — raw body becomes the message, and
+    // error_type/code are None (spec: APIError fallback).
+    let url = spawn_mock(
+        "GET /v1/responses/crash",
+        Canned {
+            status_line: "HTTP/1.1 500 Internal Server Error",
+            body: "upstream boom".to_string(),
+        },
+    )
+    .await;
+    let resp = reqwest::Client::new()
+        .get(format!("{}/v1/responses/crash", url))
+        .header("Authorization", "Bearer secret-key")
+        .send()
+        .await
+        .expect("send");
+    let err = client_at(&url)
+        .ensure_success(resp)
+        .await
+        .expect_err("500 must error");
+    match err {
+        HermesError::Api {
+            status,
+            message,
+            error_type,
+            code,
+        } => {
+            assert_eq!(status, 500);
+            assert_eq!(message, "upstream boom");
+            assert_eq!(error_type, None, "error_type must be absent for raw body");
+            assert_eq!(code, None, "code must be absent for raw body");
+        }
+        other => panic!("expected Api error, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn health_returns_true_for_2xx() {
+    let url = spawn_mock(
+        "GET /health",
+        Canned {
+            status_line: "HTTP/1.1 200 OK",
+            body: "{}".to_string(),
+        },
+    )
+    .await;
+    let ok = client_at(&url)
+        .health()
+        .await
+        .expect("health must not error on 2xx");
+    assert!(ok);
+}
+
+#[tokio::test]
+async fn health_returns_false_for_non_2xx_without_erroring() {
+    // Distinct contract from the CRUD endpoints: health surfaces a failing
+    // gateway as Ok(false), not Err, so callers can use it as a probe.
+    let url = spawn_mock(
+        "GET /health",
+        Canned {
+            status_line: "HTTP/1.1 503 Service Unavailable",
+            body: "{}".to_string(),
+        },
+    )
+    .await;
+    let ok = client_at(&url)
+        .health()
+        .await
+        .expect("health must not error on non-2xx");
+    assert!(!ok);
+}
+
+#[tokio::test]
+async fn create_response_posts_and_decodes_full_response() {
+    // Flagship endpoint: POST /v1/responses with the JSON request body, then
+    // decode the gateway Response (validates the full happy-path + parse).
+    let body = r#"{
+        "id":"resp_1",
+        "object":"response",
+        "status":"completed",
+        "created_at":7,
+        "model":"hermes-agent",
+        "output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"PONG"}]}],
+        "usage":{"input_tokens":1,"output_tokens":2,"total_tokens":3}
+    }"#;
+    let url = spawn_mock(
+        "POST /v1/responses",
+        Canned {
+            status_line: "HTTP/1.1 200 OK",
+            body: body.to_string(),
+        },
+    )
+    .await;
+    let req = CreateResponseRequest::builder()
+        .input("ping")
+        .store(true)
+        .build()
+        .expect("build");
+    let resp = client_at(&url)
+        .create_response(&req)
+        .await
+        .expect("create must succeed");
+    assert_eq!(resp.id, "resp_1");
+    assert_eq!(resp.status, "completed");
+    assert_eq!(resp.object_type, "response");
+    assert_eq!(resp.created_at, 7);
+    assert_eq!(resp.usage.input_tokens, 1);
+    assert_eq!(resp.usage.output_tokens, 2);
+    assert_eq!(resp.usage.total_tokens, 3);
+    assert_eq!(resp.text(), Some("PONG"));
+}
+
+#[tokio::test]
+async fn get_response_gets_and_decodes_response() {
+    let body = r#"{
+        "id":"resp_42",
+        "object":"response",
+        "status":"completed",
+        "created_at":9,
+        "model":"hermes-agent",
+        "output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"hi"}]}],
+        "usage":{"input_tokens":0,"output_tokens":0,"total_tokens":0}
+    }"#;
+    let url = spawn_mock(
+        "GET /v1/responses/resp_42",
+        Canned {
+            status_line: "HTTP/1.1 200 OK",
+            body: body.to_string(),
+        },
+    )
+    .await;
+    let resp = client_at(&url)
+        .get_response("resp_42")
+        .await
+        .expect("get must succeed");
+    assert_eq!(resp.id, "resp_42");
+    assert_eq!(resp.status, "completed");
+    assert_eq!(resp.text(), Some("hi"));
+}
