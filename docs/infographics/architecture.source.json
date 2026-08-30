@@ -1,12 +1,12 @@
 {
-  "schema_version": "repository-architecture-infographic/v1",
+  "schema_version": "repository-architecture-infographic/v2",
   "meta": {
     "project": "hermes-sdk-rs",
-    "snapshot": "591845b4b",
-    "generated": "2026-08-26",
+    "snapshot": "1a02005fd",
+    "generated": "2026-08-30",
     "language": "zh-CN",
     "audience": "新贡献者、架构评审者与下游集成方",
-    "thesis": "把仓库的真实入口、实现分区、可执行用法与验证证据放在一条可回查的阅读路径上。",
+    "thesis": "把仓库的真实入口、实现分区、真实依赖与验证证据放在一条可回查的阅读路径上。",
     "canonical_source": "docs/infographics/architecture.svg"
   },
   "narrative": {
@@ -18,13 +18,13 @@
       "规模与依赖",
       "验证与溯源"
     ],
-    "inference_policy": "文件、计数、命令与依赖是仓库事实；职责名称仅按路径命名归类，均显式标注为推断。"
+    "inference_policy": "文件、计数、命令、依赖与最近提交是仓库事实；职责名称仅按路径命名归类，均显式标注为推断。"
   },
   "sources": {
     "readme": "README.md",
     "readme_excerpt": [
-      "Rust SDK for the Hermes Agent API server (Responses API).",
-      "hermes-sdk provides an async Rust client for the Hermes Agent API gateway, which exposes an OpenAI-compatible Responses API. It supports creating agent responses (with tool calls), multi-turn conversations via chaining or named conversations, retrieving and deleting stored responses, and health checks. Built on reqwest with rustls-tls for use within Tokio ru"
+      "hermes-sdk provides an async Rust client for the Hermes Agent API gateway, which exposes an OpenAI-compatible Responses API. It supports creating agent responses (with tool calls), multi-turn conversations via chaining or named conversations, retrieving and deleting stored responses, and health checks. Built on reqwest with rustls-tls for use within Tokio ru",
+      "[tokio::main] async fn main() - Result { let client = HermesClient::new(\"your-api-key\", \"http://localhost:8642\");"
     ],
     "manifests": [
       "Cargo.toml",
@@ -34,11 +34,12 @@
     "tracked_file_formula": "git ls-files，排除构建/依赖目录",
     "line_formula": "逐个已跟踪源码文件统计非空文本行；不等同于语句数或复杂度",
     "component_formula": "按源码路径首个职责分区聚合；角色名由路径关键词推断",
-    "entrypoint_formula": "按常见入口文件名与 bin/cmd/cli/app 路径定位候选；路径存在是事实，入口职责仍需源码确认"
+    "entrypoint_formula": "按常见入口文件名与 bin/cmd/cli/app 路径定位候选；路径存在是事实，入口职责仍需源码确认",
+    "edge_formula": "在分区代表源码中静态匹配 import/use/mod/require 与相对路径引用；只绘制两端都能定位的边"
   },
   "facts": {
-    "description": "Rust SDK for the Hermes Agent API server (Responses API).",
-    "tracked_files": 31,
+    "description": "hermes-sdk provides an async Rust client for the Hermes Agent API gateway, which exposes an OpenAI-compatible Responses API. It supports creating agent responses (with tool calls), multi-turn conversations via chaining or named conversations, retrieving and deleting stored responses, and health checks. Built on reqwest with rustls-tls for use within Tokio ru",
+    "tracked_files": 38,
     "source_files": 12,
     "source_nonblank_lines": 1601,
     "languages": [
@@ -57,7 +58,7 @@
     "components": [
       {
         "id": "component-1",
-        "label": "src",
+        "label": "包根",
         "role": "实现分区",
         "file_count": 5,
         "nonblank_lines": 615,
@@ -69,7 +70,7 @@
       },
       {
         "id": "component-2",
-        "label": "src/types",
+        "label": "types",
         "role": "实现分区",
         "file_count": 5,
         "nonblank_lines": 615,
@@ -78,23 +79,13 @@
           "src/types/response_test.rs",
           "src/types/response.rs"
         ]
-      },
-      {
-        "id": "component-3",
-        "label": "examples",
-        "role": "实现分区",
-        "file_count": 1,
-        "nonblank_lines": 81,
-        "examples": [
-          "examples/basic.rs"
-        ]
       }
     ],
     "static_edges": [
       {
-        "from": "src",
-        "to": "src/types",
-        "evidence_files": 4,
+        "from": "包根",
+        "to": "types",
+        "evidence_files": 2,
         "method": "静态导入/模块声明匹配"
       }
     ],
@@ -113,6 +104,20 @@
       "just build          # cargo build",
       "just test           # cargo test",
       "cd e2e && cargo run"
+    ],
+    "recent_commits": [
+      {
+        "date": "2026-08-29",
+        "subject": "docs: 更新架构文档"
+      },
+      {
+        "date": "2026-08-29",
+        "subject": "docs: 架构文档英文内容翻译为中文"
+      },
+      {
+        "date": "2026-08-26",
+        "subject": "docs: relocate architecture infographic to docs/infographics"
+      }
     ],
     "test_files": 14,
     "test_examples": [
