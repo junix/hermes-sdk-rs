@@ -112,5 +112,5 @@ impl HermesClient {
 }
 
 #[cfg(test)]
-#[path = "client_test.rs"]
+#[path = "client_tests.rs"]
 mod tests;

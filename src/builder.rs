@@ -90,5 +90,5 @@ impl CreateResponseRequestBuilder {
 }
 
 #[cfg(test)]
-#[path = "builder_test.rs"]
+#[path = "builder_tests.rs"]
 mod tests;

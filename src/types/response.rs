@@ -107,5 +107,5 @@ impl Response {
 }
 
 #[cfg(test)]
-#[path = "response_test.rs"]
+#[path = "response_tests.rs"]
 mod tests;
