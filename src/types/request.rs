@@ -103,4 +103,3 @@ impl CreateResponseRequest {
 #[cfg(test)]
 #[path = "request_tests.rs"]
 mod tests;
-

@@ -186,7 +186,10 @@ fn deserializes_full_response_with_all_output_variants_from_wire_json() {
     // Ordering is significant (spec: function calls + outputs precede message).
     assert_eq!(resp.output.len(), 3);
     assert!(matches!(resp.output[0], OutputItem::FunctionCall { .. }));
-    assert!(matches!(resp.output[1], OutputItem::FunctionCallOutput { .. }));
+    assert!(matches!(
+        resp.output[1],
+        OutputItem::FunctionCallOutput { .. }
+    ));
     assert!(matches!(resp.output[2], OutputItem::Message { .. }));
 
     match &resp.output[0] {
@@ -238,7 +241,11 @@ fn output_item_with_unknown_type_tag_fails_to_deserialize() {
     // dropping them. Pin this so a future move to lenient parsing is intentional.
     let json = r#"{"type":"reasoning","summary":"..."}"#;
     let err = serde_json::from_str::<OutputItem>(json);
-    assert!(err.is_err(), "unknown type tag must not parse, got: {:?}", err);
+    assert!(
+        err.is_err(),
+        "unknown type tag must not parse, got: {:?}",
+        err
+    );
 }
 
 #[test]
