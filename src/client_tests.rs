@@ -132,13 +132,35 @@ async fn delete_response_maps_non_2xx_to_api_error() {
 fn new_uses_default_base_url_when_empty() {
     // An empty base_url must fall back to the documented default
     // (http://127.0.0.1:8642). The field is private, so observe it through the
-    // derived Debug representation, which renders it as a quoted string.
+    // Debug representation, which renders it as a quoted string.
     let client = HermesClient::new("k", "");
     let debug = format!("{:?}", client);
     assert!(
         debug.contains("base_url: \"http://127.0.0.1:8642\""),
         "empty base_url must default to http://127.0.0.1:8642, got: {debug}"
     );
+}
+
+#[test]
+fn debug_redacts_api_key_in_compact_and_pretty_forms() {
+    // Debug is used for diagnostics and by the config tests above; it must
+    // never disclose the credential in either compact or pretty ({:#?}) form,
+    // while the base URL stays inspectable.
+    let client = HermesClient::new("hunter2-super-secret-key", "http://example.test:8642");
+    for debug in [format!("{:?}", client), format!("{:#?}", client)] {
+        assert!(
+            !debug.contains("hunter2-super-secret-key"),
+            "Debug leaked the API key: {debug}"
+        );
+        assert!(
+            debug.contains("api_key: \"<redacted>\""),
+            "Debug must show the key as redacted, got: {debug}"
+        );
+        assert!(
+            debug.contains("base_url: \"http://example.test:8642\""),
+            "Debug must keep base_url inspectable, got: {debug}"
+        );
+    }
 }
 
 #[tokio::test]

@@ -1,13 +1,27 @@
+use std::fmt;
+
 use crate::types::{CreateResponseRequest, DeleteResponse, HermesError, Response};
 
 const DEFAULT_BASE_URL: &str = "http://127.0.0.1:8642";
 
 /// Async client for the Hermes Responses API.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HermesClient {
     http: reqwest::Client,
     base_url: String,
     api_key: String,
+}
+
+impl fmt::Debug for HermesClient {
+    /// Redact the credential so diagnostics never disclose the API key;
+    /// nonsecret configuration (base URL, HTTP client) stays inspectable.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HermesClient")
+            .field("http", &self.http)
+            .field("base_url", &self.base_url)
+            .field("api_key", &"<redacted>")
+            .finish()
+    }
 }
 
 impl HermesClient {
